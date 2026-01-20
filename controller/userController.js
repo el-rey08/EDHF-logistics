@@ -97,3 +97,23 @@ exports.login = async (req, res) => {
     }
     
 }
+
+exports.getOneUser = async (req, res) => {
+  try {
+    const {userId} = req.params
+
+        const user = await userModel.findOne({userId})
+        if(!user){
+            return res.status(404).json(`User not found.`)
+        }
+        res.status(200).json({
+            message: `Dear ${user.firstName}, below is ur info`,
+            data: user
+        })
+  } catch (error) {
+    return res.status(500).json({
+      status: 'server error',
+      message: error.message
+    })
+  }
+}
