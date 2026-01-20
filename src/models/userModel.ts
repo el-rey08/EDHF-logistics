@@ -7,21 +7,69 @@ export interface IUser extends Document {
   address: string;
   phoneNumber: string;
   isVerified: boolean;
+  emailOTP?: string;
+  otpExpiresAt?: Date;
+  otpAttempts: number;
+  otpLastSentAt?: Date;
 }
 
-const userSchema = new Schema<IUser>({
-  fullName: { type: String, required: true, trim: true },
+const userSchema = new Schema<IUser>(
+  {
+    fullName: {
+      type: String,
+      required: true,
+      trim: true,
+    },
 
-  email: { type: String, required: true, lowercase: true, unique: true, trim: true },
+    email: {
+      type: String,
+      required: true,
+      lowercase: true,
+      unique: true,
+      trim: true,
+    },
 
-  password: { type: String, required: true, minlength: 8 },
+    password: {
+      type: String,
+      required: true,
+      minlength: 8,
+    },
 
-  address: { type: String, required: true, trim: true },
+    address: {
+      type: String,
+      required: true,
+      trim: true,
+    },
 
-  phoneNumber: { type: String, required: true },
+    phoneNumber: {
+      type: String,
+      required: true,
+    },
 
-  isVerified: { type: Boolean, default: false }
+    isVerified: {
+      type: Boolean,
+      default: false,
+    },
 
-}, { timestamps: true });
+    // 🔐 OTP Fields
+    emailOTP: {
+      type: String,
+    },
+
+    otpExpiresAt: {
+      type: Date,
+    },
+
+    otpAttempts: {
+      type: Number,
+      default: 0,
+    },
+
+    otpLastSentAt: {
+      type: Date,
+    },
+  },
+  { timestamps: true }
+);
 
 export const userModel = mongoose.model<IUser>("users", userSchema);

@@ -7,11 +7,18 @@ exports.connectDb = void 0;
 require("dotenv/config");
 const mongoose_1 = __importDefault(require("mongoose"));
 const connectDb = async () => {
-    const DB = process.env.DATABASE_URL;
-    if (!DB)
-        throw new Error("DATABASE_URL missing");
-    await mongoose_1.default.connect(DB);
-    console.log("MongoDB connected");
+    const MONGODB_URL = process.env.DATABASE_URL;
+    if (!MONGODB_URL) {
+        throw new Error("Missing DATABASE_URL in env");
+    }
+    try {
+        await mongoose_1.default.connect(MONGODB_URL);
+        console.log("MongoDB connected");
+    }
+    catch (err) {
+        console.error("DB connection error", err);
+        throw err;
+    }
 };
 exports.connectDb = connectDb;
 //# sourceMappingURL=db.js.map

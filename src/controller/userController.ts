@@ -2,12 +2,39 @@ import { Request, Response } from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { userModel } from "../models/userModel";
+import { generateOTP } from "../utils/otp";
+import { hashValue } from "../utils/hash";
+import { sendEmail } from "../emails/emailService";
+import { verifyEmailOTPTemplate } from "../emails/templates/verifyEmail";
 
-export const createUser = async (req: Request, res: Response): Promise<void> => {
+const OTP_EXPIRY_MINUTES = 10;
+const OTP_RESEND_COOLDOWN = 1; // minutes
+const APP_NAME = "elisha global service LTD";
+const MAX_OTP_ATTEMPTS = 5;
+
+export const createUser = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   try {
-    const { fullName, email, password, confirmPassword, phoneNumber, address } = req.body;
+    const {
+      fullName,
+      email,
+      password,
+      confirmPassword,
+      phoneNumber,
+      address,
+    } = req.body;
 
-    if (!fullName || !email || !password || !confirmPassword || !phoneNumber || !address) {
+    // 🔍 Validate required fields
+    if (
+      !fullName ||
+      !email ||
+      !password ||
+      !confirmPassword ||
+      !phoneNumber ||
+      !address
+    ) {
       res.status(400).json({ message: "All fields are required" });
       return;
     }
@@ -17,28 +44,65 @@ export const createUser = async (req: Request, res: Response): Promise<void> => 
       return;
     }
 
-    const existingUser = await userModel.findOne({ email: email.toLowerCase() });
+    // 🔎 Check existing existingUser
+    const existingUser = await userModel.findOne({
+      email: email.toLowerCase(),
+    });
+
     if (existingUser) {
       res.status(400).json({ message: "Email already exists" });
       return;
     }
 
+    // 🔐 Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // 🔢 Generate OTP
+    const otp = generateOTP();
+    const hashedOTP = await hashValue(otp);
+
+    // 👤 Create user with OTP fields
     const user = await userModel.create({
       fullName,
-      email,
+      email: email.toLowerCase(),
       password: hashedPassword,
       phoneNumber,
-      address
+      address,
+
+      emailOTP: hashedOTP,
+      otpExpiresAt: new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000),
+      otpAttempts: 0,
+      otpLastSentAt: new Date(),
     });
 
-    res.status(201).json({ message: "User created successfully", data: user });
+    // 📧 Send OTP email
+    const html = verifyEmailOTPTemplate({
+      userName: fullName,
+      appName: APP_NAME,
+      otpCode: otp,
+      expiryTime: `${OTP_EXPIRY_MINUTES} minutes`,
+      supportEmail: "support@elishagloballogistics2025@gmail.com",
+      currentYear: new Date().getFullYear(),
+    });
 
+    await sendEmail({
+      to: email.toLowerCase(),
+      subject: "Verify Your Email - OTP Code",
+      html,
+    });
+
+    res.status(201).json({
+      message: "User created successfully. OTP sent to email.",
+      data: user,
+    });
   } catch (err: any) {
-    res.status(500).json({ message: "Server error", err: err.message });
+    res.status(500).json({
+      message: "Server error",
+      err: err.message,
+    });
   }
 };
+
 
 
 
@@ -163,4 +227,106 @@ export const changePassword = async (req: any, res: Response): Promise<void> => 
   } catch (err: any) {
     res.status(500).json({ message: "Server error", err: err.message });
   }
+};
+
+export const verifyEmailOTP = async (req: any, res: any) => {
+  const { email, otp } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ message: "Email is required" });
+  }
+
+  const user = await userModel.findOne({ email });
+  if (!user) {
+    return res.status(404).json({ message: "User not found" });
+  }
+
+  if (user.isVerified) {
+    return res.status(400).json({ message: "Email already verified" });
+  }
+
+  if (user.otpAttempts >= MAX_OTP_ATTEMPTS) {
+    return res.status(429).json({
+      message: "Too many failed attempts. Please request a new OTP.",
+    });
+  }
+
+  if (!user.otpExpiresAt || user.otpExpiresAt < new Date()) {
+    return res.status(400).json({ message: "OTP has expired" });
+  }
+
+  if (!user.emailOTP) {
+    return res.status(400).json({ message: "OTP not found" });
+  }
+
+  const isValid = await bcrypt.compare(otp, user.emailOTP);
+  if (!isValid) {
+    user.otpAttempts += 1;
+    await user.save();
+
+    return res.status(400).json({ message: "Invalid OTP" });
+  }
+
+  user.isVerified = true;
+  user.emailOTP = undefined!;
+  user.otpExpiresAt = undefined!;
+  user.otpAttempts = 0;
+  await user.save();
+
+  res.status(200).json({
+    message: "Email verified successfully",
+  });
+};
+
+export const resendOTP = async (req: any, res: any) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ message: "Email is required" });
+  }
+
+  const existingUser = await userModel.findOne({ email });
+  if (!existingUser) {
+    return res.status(404).json({ message: "User not found" });
+  }
+
+  if (existingUser.isVerified) {
+    return res.status(400).json({ message: "Email already verified" });
+  }
+
+  if (
+    existingUser.otpLastSentAt &&
+    Date.now() - existingUser.otpLastSentAt.getTime() <
+      OTP_RESEND_COOLDOWN * 60000
+  ) {
+    return res.status(429).json({
+      message: "Please wait before requesting another OTP",
+    });
+  }
+
+  const otp = generateOTP();
+  existingUser.emailOTP = await hashValue(otp);
+  existingUser.otpExpiresAt = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60000);
+  existingUser.otpAttempts = 0;
+  existingUser.otpLastSentAt = new Date();
+  await existingUser.save();
+
+  const html = verifyEmailOTPTemplate({
+    userName: existingUser.fullName,
+    appName: APP_NAME,
+    otpCode: otp,
+    expiryTime: `${OTP_EXPIRY_MINUTES} minutes`,
+    supportEmail: "support@elishaglobal.com",
+    currentYear: new Date().getFullYear(),
+  });
+
+  await sendEmail({
+    to: email,
+    subject: "Your New OTP - Email Verification",
+    html,
+  });
+
+  res.status(200).json({
+    message: "New OTP sent successfully",
+  });
 };
