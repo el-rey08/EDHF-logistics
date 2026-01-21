@@ -9,16 +9,14 @@ interface SendEmailOptions {
 const transporter = nodemailer.createTransport({
   host: process.env.MAIL_HOST,
   port: Number(process.env.MAIL_PORT),
-  secure: Number(process.env.MAIL_PORT) === 465,
+  secure: Number(process.env.MAIL_PORT) === 465, // true for 465, false for 587
   auth: {
     user: process.env.MAIL_USER,
     pass: process.env.MAIL_PASS,
   },
 });
 
-/**
- * Verify transporter connection (optional but recommended)
- */
+// Optional verification
 transporter.verify((error) => {
   if (error) {
     console.error("❌ Mail server connection failed:", error);
@@ -27,9 +25,7 @@ transporter.verify((error) => {
   }
 });
 
-/**
- * Send Email Helper
- */
+// Send email helper
 export const sendEmail = async ({
   to,
   subject,
@@ -37,7 +33,7 @@ export const sendEmail = async ({
 }: SendEmailOptions): Promise<void> => {
   try {
     await transporter.sendMail({
-      from: `"Elisha Global Service LTD" <${process.env.MAIL_FROM}>`,
+      from: process.env.MAIL_FROM, // fixed
       to,
       subject,
       html,
