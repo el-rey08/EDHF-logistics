@@ -6,6 +6,9 @@ import { generateOTP } from "../utils/otp";
 import { hashValue } from "../utils/hash";
 import { sendEmail } from "../emails/emailService";
 import { verifyEmailOTPTemplate } from "../emails/templates/verifyEmail";
+import cloudinary from "../utils/cloudinary";
+import fs from "fs";
+
 
 const OTP_EXPIRY_MINUTES = 10;
 const OTP_RESEND_COOLDOWN = 1; // minutes
@@ -44,7 +47,7 @@ export const createUser = async (
       return;
     }
 
-    // 🔎 Check existing existingUser
+    // 🔎 Check existing user
     const existingUser = await userModel.findOne({
       email: email.toLowerCase(),
     });
@@ -61,19 +64,40 @@ export const createUser = async (
     const otp = generateOTP();
     const hashedOTP = await hashValue(otp);
 
-    // 👤 Create user with OTP fields
-    const user = await userModel.create({
+    // ☁️ Cloudinary Upload (optional image)
+    let profileImage: string | undefined;
+
+    const file = req.file 
+    if (file) {
+      const uploadedImage = await cloudinary.uploader.upload(file.path, {
+        folder: "uploads",
+      });
+
+      profileImage = uploadedImage.secure_url;
+
+      // 🧹 Remove file from local storage
+      fs.unlink(file.path, (err) => {
+        if (err) {
+          console.error("Failed to delete local file:", err);
+        }
+      });
+    }
+
+    // 👤 Create user
+    const user = new userModel({
       fullName,
       email: email.toLowerCase(),
       password: hashedPassword,
       phoneNumber,
       address,
-
+      profileImage,
       emailOTP: hashedOTP,
       otpExpiresAt: new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000),
       otpAttempts: 0,
       otpLastSentAt: new Date(),
     });
+
+    await user.save();
 
     // 📧 Send OTP email
     const html = verifyEmailOTPTemplate({
@@ -119,6 +143,11 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       res.status(400).json({ message: "Incorrect password" });
+      return;
+    }
+
+    if (!user.isVerified) {
+      res.status(403).json({ message: "Email not verified" });
       return;
     }
 

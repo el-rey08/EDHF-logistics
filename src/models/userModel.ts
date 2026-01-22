@@ -11,6 +11,7 @@ export interface IUser extends Document {
   otpExpiresAt?: Date;
   otpAttempts: number;
   otpLastSentAt?: Date;
+  profileImage: string;
 }
 
 const userSchema = new Schema<IUser>(
@@ -49,6 +50,10 @@ const userSchema = new Schema<IUser>(
     isVerified: {
       type: Boolean,
       default: false,
+    },
+
+    profileImage: {
+      type: String,
     },
 
     // 🔐 OTP Fields

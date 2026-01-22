@@ -1,10 +1,11 @@
 import express, { Router } from "express";
 import { createUser, login, getOneUser, getAllUser, updateProfile, changePassword } from "../controller/userController";
 import { authenticate } from "../middleware/auth";
+import { upload } from "../utils/multer";
 
 export const userRoutes: Router = express.Router();
 
-userRoutes.post("/signup", createUser);
+userRoutes.post("/signup", upload.single("profileImage"), createUser);
 userRoutes.post("/login", login);
 
 //Get User
