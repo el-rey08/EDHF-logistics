@@ -5,6 +5,7 @@ import { generateOTP } from "../utils/otp";
 import { hashValue } from "../utils/hash";
 import { sendEmail } from "../emails/emailService";
 import { verifyEmailOTPTemplate } from "../emails/templates/verifyEmail";
+import jwt from "jsonwebtoken";
 
 const OTP_EXPIRY_MINUTES = 10;
 const OTP_RESEND_COOLDOWN = 1; // minutes
@@ -102,6 +103,45 @@ export const riderSignup = async (req: Request, res: Response) => {
   }
 };
 
+export const login = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { email, password } = req.body;
+
+    const rider = await riderModel.findOne({ email: email.toLowerCase() });
+    if (!rider) {
+      res.status(404).json({ message: "User not found" });
+      return;
+    }
+
+    const isMatch = await bcrypt.compare(password, rider.password);
+    if (!isMatch) {
+      res.status(400).json({ message: "Incorrect password" });
+      return;
+    }
+
+    if (!rider.isVerified) {
+      res.status(403).json({ message: "Email not verified" });
+      return;
+    }
+
+    const token = jwt.sign(
+      { userId: rider._id, email: rider.email },
+      process.env.JWT_SECRET as string,
+      { expiresIn: "1d" }
+    );
+
+    res.status(200).json({
+      message: "Login successful",
+      token,
+      data: rider.fullName
+    });
+
+  } catch (err: any) {
+    res.status(500).json({ message: "Server error", err: err.message });
+  }
+};
+
+
 // ------------------ VERIFY EMAIL OTP ------------------
 export const verifyEmailOTP = async (req: Request, res: Response) => {
   try {
@@ -147,7 +187,26 @@ export const verifyEmailOTP = async (req: Request, res: Response) => {
     rider.otpAttempts = 0;
     await rider.save();
 
-    return res.status(200).json({ message: "Email verified successfully" });
+    const token = jwt.sign(
+          {
+            userId: rider._id,
+            email: rider.email,
+            role: rider.role,
+          },
+          process.env.JWT_SECRET as string,
+          { expiresIn: "7d" }
+        );
+    
+        return res.status(200).json({
+          message: "Account verified successfully",
+          token,
+          user: {
+            id: rider._id,
+            email: rider.email,
+            role: rider.role,
+          },
+        });
+  
   } catch (error) {
     console.error("Email verification error:", error);
     return res.status(500).json({ message: "Internal server error" });

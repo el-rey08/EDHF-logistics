@@ -261,9 +261,9 @@ export const changePassword = async (req: any, res: Response): Promise<void> => 
 export const verifyEmailOTP = async (req: any, res: any) => {
   const { email, otp } = req.body;
 
-  if (!email) {
-    return res.status(400).json({ message: "Email is required" });
-  }
+  if (!email || !otp) {
+      return res.status(400).json({ message: "Email and OTP are required" });
+    }
 
   const user = await userModel.findOne({ email });
   if (!user) {
@@ -284,6 +284,8 @@ export const verifyEmailOTP = async (req: any, res: any) => {
     return res.status(400).json({ message: "OTP has expired" });
   }
 
+  
+
   if (!user.emailOTP) {
     return res.status(400).json({ message: "OTP not found" });
   }
@@ -302,10 +304,26 @@ export const verifyEmailOTP = async (req: any, res: any) => {
   user.otpAttempts = 0;
   await user.save();
 
-  res.status(200).json({
-    message: "Email verified successfully",
-  });
-};
+  const token = jwt.sign(
+      {
+        userId: user._id,
+        email: user.email,
+        role: user.role,
+      },
+      process.env.JWT_SECRET as string,
+      { expiresIn: "7d" }
+    );
+
+    return res.status(200).json({
+      message: "Account verified successfully",
+      token,
+      user: {
+        id: user._id,
+        email: user.email,
+        role: user.role,
+      },
+    });
+  };
 
 export const resendOTP = async (req: any, res: any) => {
   const { email } = req.body;

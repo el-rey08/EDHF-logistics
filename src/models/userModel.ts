@@ -5,6 +5,7 @@ export interface IUser extends Document {
   email: string;
   password: string;
   address: string;
+  role: "user";
   phoneNumber: string;
   isVerified: boolean;
   emailOTP?: string;
