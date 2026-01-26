@@ -5,6 +5,8 @@ import { generateOTP } from "../utils/otp";
 import { hashValue } from "../utils/hash";
 import { sendEmail } from "../emails/emailService";
 import { verifyEmailOTPTemplate } from "../emails/templates/verifyEmail";
+import  cloudinary  from "../utils/cloudinary";
+import fs from "fs"
 import jwt from "jsonwebtoken";
 
 const OTP_EXPIRY_MINUTES = 10;
@@ -20,6 +22,7 @@ export const riderSignup = async (req: Request, res: Response) => {
       phoneNumber,
       email,
       password,
+      confirmPassword,
       governmentIdType,
       governmentIdNumber,
       vehicle,
@@ -30,6 +33,7 @@ export const riderSignup = async (req: Request, res: Response) => {
       !fullName ||
       !phoneNumber ||
       !password ||
+      !confirmPassword ||
       !governmentIdType ||
       !governmentIdNumber ||
       !vehicle?.type ||
@@ -39,7 +43,10 @@ export const riderSignup = async (req: Request, res: Response) => {
         message: "All required fields must be provided",
       });
     }
-
+    if (password !== confirmPassword) {
+      res.status(400).json({ message: "Passwords do not match" });
+      return;
+    }
     // 2️⃣ Check if rider exists
     const existingRider = await riderModel.findOne({
       $or: [{ phoneNumber }, { governmentIdNumber }],
@@ -57,9 +64,26 @@ export const riderSignup = async (req: Request, res: Response) => {
     // 4️⃣ Generate OTP
     const otp = generateOTP();
     const hashedOTP = await hashValue(otp);
+     let profileImage: string | undefined;
+    
+        const file = req.file 
+        if (file) {
+          const uploadedImage = await cloudinary.uploader.upload(file.path, {
+            folder: "uploads",
+          });
+    
+          profileImage = uploadedImage.secure_url;
+    
+          // 🧹 Remove file from local storage
+          fs.unlink(file.path, (err) => {
+            if (err) {
+              console.error("Failed to delete local file:", err);
+            }
+          });
+        }
 
     // 5️⃣ Create rider
-    const rider = await riderModel.create({
+    const rider = new riderModel({
       fullName,
       phoneNumber,
       email: email?.toLowerCase(),
@@ -74,6 +98,8 @@ export const riderSignup = async (req: Request, res: Response) => {
       otpAttempts: 0,
       otpLastSentAt: new Date(),
     });
+
+    await rider.save()
 
     // 6️⃣ Send OTP email
     if (email) {
