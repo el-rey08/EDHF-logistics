@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { userModel } from "../models/userModel";
+import { blacklistModel } from "../models/blacklistModel";
 import { generateOTP } from "../utils/otp";
 import { hashValue } from "../utils/hash";
 import { sendEmail } from "../emails/emailService";
@@ -376,4 +377,84 @@ export const resendOTP = async (req: any, res: any) => {
   res.status(200).json({
     message: "New OTP sent successfully",
   });
+};
+
+export const forgotPassword = async (req: any, res: any) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ message: "Email is required" });
+  }
+
+  const user = await userModel.findOne({ email: email.toLowerCase() });
+  if (!user) {
+    return res.status(404).json({ message: "User not found" });
+  }
+
+  if (!user.isVerified) {
+    return res.status(403).json({ message: "Email not verified. Please verify your email first." });
+  }
+
+  // Generate OTP
+  const otp = generateOTP();
+  const hashedOTP = await hashValue(otp);
+
+  // Update user with new OTP details
+  user.emailOTP = hashedOTP;
+  user.otpExpiresAt = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
+  user.otpAttempts = 0;
+  user.otpLastSentAt = new Date();
+  await user.save();
+
+  // Send OTP email (reusing verifyEmailOTPTemplate for simplicity)
+  const html = verifyEmailOTPTemplate({
+    userName: user.fullName,
+    appName: APP_NAME,
+    otpCode: otp,
+    expiryTime: `${OTP_EXPIRY_MINUTES} minutes`,
+    supportEmail: "support@elishagloballogistics2025@gmail.com",
+    currentYear: new Date().getFullYear(),
+  });
+
+  await sendEmail({
+    to: email.toLowerCase(),
+    subject: "Reset Your Password - OTP Code",
+    html,
+  });
+
+  res.status(200).json({
+    message: "Password reset OTP sent to your email.",
+  });
+};
+
+export const logout = async (req: any, res: Response): Promise<void> => {
+  try {
+    const token = req.headers.authorization?.split(" ")[1]; // Extract token from Bearer header
+
+    if (!token) {
+      res.status(400).json({ message: "Token is required" });
+      return;
+    }
+
+    // Decode token to get expiry date
+    const decoded: any = jwt.decode(token);
+    if (!decoded || !decoded.exp) {
+      res.status(400).json({ message: "Invalid token" });
+      return;
+    }
+
+    const expiresAt = new Date(decoded.exp * 1000); // Convert to milliseconds
+
+    // Add token to blacklist
+    const blacklistedToken = new blacklistModel({
+      token,
+      expiresAt,
+    });
+
+    await blacklistedToken.save();
+
+    res.status(200).json({ message: "Logged out successfully" });
+  } catch (err: any) {
+    res.status(500).json({ message: "Server error", err: err.message });
+  }
 };

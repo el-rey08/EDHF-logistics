@@ -1,5 +1,14 @@
 import express, { Router } from "express";
-import { createUser, login, getOneUser, getAllUser, updateProfile, changePassword } from "../controller/userController";
+import { createUser, 
+    login, 
+    getOneUser, 
+    getAllUser, 
+    updateProfile,
+     changePassword, 
+     verifyEmailOTP, 
+     resendOTP, 
+     forgotPassword, 
+     logout } from "../controller/userController";
 import { authenticate } from "../middleware/auth";
 import { upload } from "../utils/multer";
 
