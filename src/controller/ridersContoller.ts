@@ -5,9 +5,10 @@ import { generateOTP } from "../utils/otp";
 import { hashValue } from "../utils/hash";
 import { sendEmail } from "../emails/emailService";
 import { verifyEmailOTPTemplate } from "../emails/templates/verifyEmail";
-import  cloudinary  from "../utils/cloudinary";
+import cloudinary from "../utils/cloudinary";
 import fs from "fs"
 import jwt from "jsonwebtoken";
+import { blacklistModel } from "../models/blacklistModel";
 
 const OTP_EXPIRY_MINUTES = 10;
 const OTP_RESEND_COOLDOWN = 1; // minutes
@@ -64,23 +65,23 @@ export const riderSignup = async (req: Request, res: Response) => {
     // 4️⃣ Generate OTP
     const otp = generateOTP();
     const hashedOTP = await hashValue(otp);
-     let profileImage: string | undefined;
-    
-        const file = req.file 
-        if (file) {
-          const uploadedImage = await cloudinary.uploader.upload(file.path, {
-            folder: "uploads",
-          });
-    
-          profileImage = uploadedImage.secure_url;
-    
-          // 🧹 Remove file from local storage
-          fs.unlink(file.path, (err) => {
-            if (err) {
-              console.error("Failed to delete local file:", err);
-            }
-          });
+    let profileImage: string | undefined;
+
+    const file = req.file
+    if (file) {
+      const uploadedImage = await cloudinary.uploader.upload(file.path, {
+        folder: "uploads",
+      });
+
+      profileImage = uploadedImage.secure_url;
+
+      // 🧹 Remove file from local storage
+      fs.unlink(file.path, (err) => {
+        if (err) {
+          console.error("Failed to delete local file:", err);
         }
+      });
+    }
 
     // 5️⃣ Create rider
     const rider = new riderModel({
@@ -91,6 +92,7 @@ export const riderSignup = async (req: Request, res: Response) => {
       governmentIdType,
       governmentIdNumber,
       vehicle,
+      profileImage,
       status: "pending",
       isAvailable: false,
       emailOTP: hashedOTP,
@@ -214,25 +216,25 @@ export const verifyEmailOTP = async (req: Request, res: Response) => {
     await rider.save();
 
     const token = jwt.sign(
-          {
-            userId: rider._id,
-            email: rider.email,
-            role: rider.role,
-          },
-          process.env.JWT_SECRET as string,
-          { expiresIn: "7d" }
-        );
-    
-        return res.status(200).json({
-          message: "Account verified successfully",
-          token,
-          user: {
-            id: rider._id,
-            email: rider.email,
-            role: rider.role,
-          },
-        });
-  
+      {
+        userId: rider._id,
+        email: rider.email,
+        role: rider.role,
+      },
+      process.env.JWT_SECRET as string,
+      { expiresIn: "7d" }
+    );
+
+    return res.status(200).json({
+      message: "Account verified successfully",
+      token,
+      user: {
+        id: rider._id,
+        email: rider.email,
+        role: rider.role,
+      },
+    });
+
   } catch (error) {
     console.error("Email verification error:", error);
     return res.status(500).json({ message: "Internal server error" });
@@ -289,3 +291,84 @@ export const resendOTP = async (req: Request, res: Response) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 };
+
+export const forgotPassword = async (req: any, res: any) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ message: "Email is required" });
+  }
+
+  const rider = await riderModel.findOne({ email: email.toLowerCase() });
+  if (!rider) {
+    return res.status(404).json({ message: "User not found" });
+  }
+
+  if (!rider.isVerified) {
+    return res.status(403).json({ message: "Email not verified. Please verify your email first." });
+  }
+
+  // Generate OTP
+  const otp = generateOTP();
+  const hashedOTP = await hashValue(otp);
+
+  // Update rider with new OTP details
+  rider.emailOTP = hashedOTP;
+  rider.otpExpiresAt = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
+  rider.otpAttempts = 0;
+  rider.otpLastSentAt = new Date();
+  await rider.save();
+
+  // Send OTP email (reusing verifyEmailOTPTemplate for simplicity)
+  const html = verifyEmailOTPTemplate({
+    userName: rider.fullName,
+    appName: APP_NAME,
+    otpCode: otp,
+    expiryTime: `${OTP_EXPIRY_MINUTES} minutes`,
+    supportEmail: "support@elishagloballogistics2025@gmail.com",
+    currentYear: new Date().getFullYear(),
+  });
+
+  await sendEmail({
+    to: email.toLowerCase(),
+    subject: "Reset Your Password - OTP Code",
+    html,
+  });
+
+  res.status(200).json({
+    message: "Password reset OTP sent to your email.",
+  });
+};
+
+export const logout = async (req: any, res: Response): Promise<void> => {
+  try {
+    const token = req.headers.authorization?.split(" ")[1]; // Extract token from Bearer header
+
+    if (!token) {
+      res.status(400).json({ message: "Token is required" });
+      return;
+    }
+
+    // Decode token to get expiry date
+    const decoded: any = jwt.decode(token);
+    if (!decoded || !decoded.exp) {
+      res.status(400).json({ message: "Invalid token" });
+      return;
+    }
+
+    const expiresAt = new Date(decoded.exp * 1000); // Convert to milliseconds
+
+    // Add token to blacklist
+    const blacklistedToken = new blacklistModel({
+      token,
+      expiresAt,
+    });
+
+    await blacklistedToken.save();
+
+    res.status(200).json({ message: "Logged out successfully" });
+  } catch (err: any) {
+    res.status(500).json({ message: "Server error", err: err.message });
+  }
+};
+
