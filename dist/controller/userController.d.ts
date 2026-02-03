@@ -7,3 +7,5 @@ export declare const updateProfile: (req: any, res: Response) => Promise<void>;
 export declare const changePassword: (req: any, res: Response) => Promise<void>;
 export declare const verifyEmailOTP: (req: any, res: any) => Promise<any>;
 export declare const resendOTP: (req: any, res: any) => Promise<any>;
+export declare const forgotPassword: (req: any, res: any) => Promise<any>;
+export declare const logout: (req: any, res: Response) => Promise<void>;

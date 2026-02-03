@@ -33,56 +33,20 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.userModel = void 0;
+exports.blacklistModel = void 0;
 const mongoose_1 = __importStar(require("mongoose"));
-const userSchema = new mongoose_1.Schema({
-    fullName: {
+const blacklistSchema = new mongoose_1.Schema({
+    token: {
         type: String,
         required: true,
-        trim: true,
-    },
-    email: {
-        type: String,
-        required: true,
-        lowercase: true,
         unique: true,
-        trim: true,
     },
-    password: {
-        type: String,
-        required: true,
-        minlength: 8,
-    },
-    address: {
-        type: String,
-        required: true,
-        trim: true,
-    },
-    phoneNumber: {
-        type: String,
-        required: true,
-    },
-    isVerified: {
-        type: Boolean,
-        default: false,
-    },
-    profileImage: {
-        type: String,
-    },
-    // 🔐 OTP Fields
-    emailOTP: {
-        type: String,
-    },
-    otpExpiresAt: {
+    expiresAt: {
         type: Date,
-    },
-    otpAttempts: {
-        type: Number,
-        default: 0,
-    },
-    otpLastSentAt: {
-        type: Date,
+        required: true,
     },
 }, { timestamps: true });
-exports.userModel = mongoose_1.default.model("users", userSchema);
-//# sourceMappingURL=userModel.js.map
+// Index to auto-delete expired tokens
+blacklistSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+exports.blacklistModel = mongoose_1.default.model("blacklist", blacklistSchema);
+//# sourceMappingURL=blacklistModel.js.map

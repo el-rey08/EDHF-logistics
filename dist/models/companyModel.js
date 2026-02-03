@@ -33,56 +33,60 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.userModel = void 0;
+exports.companyModel = void 0;
 const mongoose_1 = __importStar(require("mongoose"));
-const userSchema = new mongoose_1.Schema({
-    fullName: {
+const companySchema = new mongoose_1.Schema({
+    companyName: {
+        type: String,
+        required: true,
+        trim: true
+    },
+    companyAddress: {
         type: String,
         required: true,
         trim: true,
     },
-    email: {
+    companyEmail: {
         type: String,
         required: true,
         lowercase: true,
         unique: true,
         trim: true,
     },
-    password: {
-        type: String,
-        required: true,
-        minlength: 8,
-    },
-    address: {
-        type: String,
-        required: true,
-        trim: true,
-    },
-    phoneNumber: {
+    companyPhone: {
         type: String,
         required: true,
     },
-    isVerified: {
-        type: Boolean,
-        default: false,
+    companyProfile: {
+        type: String
     },
-    profileImage: {
+    companyPassword: {
         type: String,
+        required: true
     },
-    // 🔐 OTP Fields
     emailOTP: {
         type: String,
+        select: false,
+        default: null
     },
     otpExpiresAt: {
         type: Date,
+        default: null
     },
     otpAttempts: {
         type: Number,
-        default: 0,
+        default: 0
     },
     otpLastSentAt: {
         type: Date,
+        default: null
     },
-}, { timestamps: true });
-exports.userModel = mongoose_1.default.model("users", userSchema);
-//# sourceMappingURL=userModel.js.map
+    isVerified: {
+        type: Boolean,
+        default: false
+    },
+}, {
+    timestamps: true
+});
+exports.companyModel = mongoose_1.default.model("elisha", companySchema);
+//# sourceMappingURL=companyModel.js.map

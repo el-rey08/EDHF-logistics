@@ -7,8 +7,9 @@ exports.userRoutes = void 0;
 const express_1 = __importDefault(require("express"));
 const userController_1 = require("../controller/userController");
 const auth_1 = require("../middleware/auth");
+const multer_1 = require("../utils/multer");
 exports.userRoutes = express_1.default.Router();
-exports.userRoutes.post("/signup", userController_1.createUser);
+exports.userRoutes.post("/signup", multer_1.upload.single("profileImage"), userController_1.createUser);
 exports.userRoutes.post("/login", userController_1.login);
 //Get User
 exports.userRoutes.get("/get-one/:id", auth_1.authenticate, userController_1.getOneUser);

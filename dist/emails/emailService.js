@@ -8,15 +8,13 @@ const nodemailer_1 = __importDefault(require("nodemailer"));
 const transporter = nodemailer_1.default.createTransport({
     host: process.env.MAIL_HOST,
     port: Number(process.env.MAIL_PORT),
-    secure: Number(process.env.MAIL_PORT) === 465,
+    secure: Number(process.env.MAIL_PORT) === 465, // true for 465, false for 587
     auth: {
         user: process.env.MAIL_USER,
         pass: process.env.MAIL_PASS,
     },
 });
-/**
- * Verify transporter connection (optional but recommended)
- */
+// Optional verification
 transporter.verify((error) => {
     if (error) {
         console.error("❌ Mail server connection failed:", error);
@@ -25,13 +23,11 @@ transporter.verify((error) => {
         console.log("✅ Mail server is ready to send emails");
     }
 });
-/**
- * Send Email Helper
- */
+// Send email helper
 const sendEmail = async ({ to, subject, html, }) => {
     try {
         await transporter.sendMail({
-            from: `"Elisha Global Service LTD" <${process.env.MAIL_FROM}>`,
+            from: process.env.MAIL_FROM, // fixed
             to,
             subject,
             html,
