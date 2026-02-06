@@ -3,6 +3,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { userModel } from "../models/userModel";
 import { blacklistModel } from "../models/blacklistModel";
+import { riderModel } from "../models/ridersModel";
 import { generateOTP } from "../utils/otp";
 import { hashValue } from "../utils/hash";
 import { sendEmail } from "../emails/emailService";
@@ -456,5 +457,23 @@ export const logout = async (req: any, res: Response): Promise<void> => {
     res.status(200).json({ message: "Logged out successfully" });
   } catch (err: any) {
     res.status(500).json({ message: "Server error", err: err.message });
+  }
+};
+
+export const getAvailableRiders = async (req: Request, res: Response) => {
+  try {
+    const riders = await riderModel.find({
+      status: "approved",
+      isAvailable: true,
+      currentLocation: { $exists: true },
+    }).select("fullName phoneNumber vehicle currentLocation rating totalDeliveries");
+
+    res.status(200).json({
+      message: "Available riders fetched successfully",
+      riders,
+    });
+  } catch (error: any) {
+    console.error("Get available riders error:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 };

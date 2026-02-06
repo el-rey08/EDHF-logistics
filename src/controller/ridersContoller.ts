@@ -372,3 +372,33 @@ export const logout = async (req: any, res: Response): Promise<void> => {
   }
 };
 
+export const updateLocation = async (req: any, res: Response) => {
+  try {
+    const { lat, lng } = req.body;
+
+    if (!lat || !lng) {
+      return res.status(400).json({ message: "Latitude and longitude are required" });
+    }
+
+    const rider = await riderModel.findById(req.user.userId);
+    if (!rider) {
+      return res.status(404).json({ message: "Rider not found" });
+    }
+
+    rider.currentLocation = {
+      type: "Point",
+      coordinates: [lng, lat], // MongoDB GeoJSON: [lng, lat]
+    };
+
+    await rider.save();
+
+    res.status(200).json({
+      message: "Location updated successfully",
+      location: rider.currentLocation,
+    });
+  } catch (error: any) {
+    console.error("Update location error:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+

@@ -1,16 +1,14 @@
-# TODO: Fix Errors in companyModel.ts and companyController.ts
+# TODO: Integrate Map for Real-Time Rider Tracking
 
-## companyModel.ts Fixes
-- [x] Add missing comma after `role: "admin"` in the interface
-- [x] Standardize interface punctuation (change semicolons to commas)
-- [x] Add `timestamps: true` to the schema
-
-## companyController.ts Fixes
-- [x] Correct typo: `existingComapny` to `existingCompany`
-- [x] Add missing `await` in `bcrypt.compare` in `companyLogIn`
-- [x] Fix query in `verifyEmailOTP`: change `{ email }` to `{ companyEmail }`
-- [x] Fix `updateProfile`: update field names to match model (`fullName` -> `companyName`, `address` -> `companyAddress`, `phoneNumber` -> `companyPhone`)
-- [x] Standardize JWT token payload to use `companyId`
-- [x] Fix typos in response messages (e.g., "regitration succesfull" -> "registration successful")
-- [x] Ensure consistent support email addresses
-- [x] Set OTP fields to `null` instead of `undefined!`
+## Approved Plan Steps
+- [x] Add Socket.IO dependencies to package.json
+- [x] Integrate Socket.IO in src/server.ts
+- [x] Add updateLocation function to src/controller/ridersContoller.ts
+- [x] Add route for updating location in src/router/riderRouter.ts
+- [x] Add getAvailableRiders function to src/controller/userController.ts
+- [x] Add route for fetching available riders in src/router/userRouter.ts
+- [ ] Optionally add location field to src/models/userModel.ts (if needed for proximity)
+- [x] Install new dependencies
+- [ ] Test location update and fetch endpoints
+- [ ] Implement real-time updates via Socket.IO
+- [ ] Prepare for frontend Google Maps integration
