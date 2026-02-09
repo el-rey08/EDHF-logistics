@@ -5,7 +5,7 @@
 
     "module": "ESNext",
     "target": "ESNext",
-    "moduleResolution": "Bundler", 
+    "moduleResolution": "Bundler",
 
     "types": ["node"],
     "esModuleInterop": true,
