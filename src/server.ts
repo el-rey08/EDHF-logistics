@@ -87,6 +87,10 @@ const swaggerOptions = {
         url: `http://localhost:${PORT}`,
         description: "Development server",
       },
+      {
+        url: "https://edhf-logistics-x7ku.onrender.com",
+        description: "Production server",
+      },
     ],
     components: {
       securitySchemes: {
