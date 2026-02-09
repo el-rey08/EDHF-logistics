@@ -5,14 +5,14 @@
   "main": "src/server.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon --exec ts-node src/server.ts",
+    "dev": "nodemon --exec tsx src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js"
   },
   "keywords": [],
   "author": "ibrahim tolani",
   "license": "ISC",
-  "type": "commonjs",
+  "type": "module",
   "dependencies": {
     "@hapi/joi": "^17.1.1",
     "@types/nodemailer": "^7.0.5",
@@ -37,6 +37,7 @@
     "@types/multer": "^2.0.0",
     "@types/node": "^25.0.9",
     "ts-node": "^10.9.2",
+    "tsx": "^4.21.0",
     "typescript": "^5.9.3"
   }
 }
