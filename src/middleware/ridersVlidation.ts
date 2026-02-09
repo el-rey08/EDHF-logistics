@@ -1,5 +1,5 @@
 import Joi from "@hapi/joi";
-import { riderModel } from "../models/ridersModel";
+import { riderModel } from "../models/ridersModel.js";
 import { Request, Response, NextFunction } from "express";
 
 // -------------------- Regex --------------------
