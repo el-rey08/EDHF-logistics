@@ -1,0 +1,165 @@
+# API Documentation for EDHF Logistics
+
+This document lists all the API endpoints for the EDHF Logistics application, including the HTTP methods, paths, required parameters, authentication, and examples for consuming the API from the frontend.
+
+## Base URL
+The base URL for all endpoints is `http://localhost:2026` (or your deployed server URL).
+
+## Authentication
+Most endpoints require authentication using a JWT token. Include the token in the Authorization header as `Bearer <token>`.
+
+## Endpoints
+
+### User Routes (/api/users)
+
+#### 1. User Signup
+- **Method:** POST
+- **Path:** /api/users/signup
+- **Description:** Register a new user.
+- **Body (multipart/form-data):**
+  - profileImage: File (optional)
+  - Other user details (name, email, password, etc.)
+- **Response:** User object with token.
+- **Frontend Usage:** Use FormData to send the image and data.
+
+#### 2. User Login
+- **Method:** POST
+- **Path:** /api/users/login
+- **Description:** Authenticate a user.
+- **Body (JSON):**
+  - email: string
+  - password: string
+- **Response:** User object with token.
+- **Frontend Usage:** Send JSON payload.
+
+#### 3. Get One User
+- **Method:** GET
+- **Path:** /api/users/get-one/:id
+- **Description:** Get details of a specific user.
+- **Auth Required:** Yes
+- **Params:** id (user ID)
+- **Response:** User object.
+- **Frontend Usage:** Include auth token in headers.
+
+#### 4. Get All Users
+- **Method:** GET
+- **Path:** /api/users/getall
+- **Description:** Get list of all users.
+- **Auth Required:** No (or check if needed)
+- **Response:** Array of user objects.
+- **Frontend Usage:** Simple GET request.
+
+#### 5. Update Profile
+- **Method:** PATCH
+- **Path:** /api/users/update-profile
+- **Description:** Update user profile.
+- **Auth Required:** Yes
+- **Body:** Updated fields.
+- **Response:** Updated user object.
+- **Frontend Usage:** Send JSON with updated data.
+
+#### 6. Change Password
+- **Method:** PATCH
+- **Path:** /api/users/change-password
+- **Description:** Change user password.
+- **Auth Required:** Yes
+- **Body:**
+  - oldPassword: string
+  - newPassword: string
+- **Response:** Success message.
+- **Frontend Usage:** Send JSON payload.
+
+#### 7. Verify Email OTP
+- **Method:** POST
+- **Path:** /api/users/verify-email
+- **Description:** Verify email with OTP.
+- **Body:**
+  - email: string
+  - otp: string
+- **Response:** Success message.
+- **Frontend Usage:** Send JSON.
+
+#### 8. Resend OTP
+- **Method:** POST
+- **Path:** /api/users/resend-otp
+- **Description:** Resend OTP for email verification.
+- **Body:**
+  - email: string
+- **Response:** Success message.
+- **Frontend Usage:** Send JSON.
+
+#### 9. Forgot Password
+- **Method:** POST
+- **Path:** /api/users/forgot-password
+- **Description:** Initiate password reset.
+- **Body:**
+  - email: string
+- **Response:** Success message.
+- **Frontend Usage:** Send JSON.
+
+#### 10. Logout
+- **Method:** POST
+- **Path:** /api/users/logout
+- **Description:** Logout user.
+- **Auth Required:** Yes
+- **Response:** Success message.
+- **Frontend Usage:** Send POST with auth token.
+
+#### 11. Get Available Riders
+- **Method:** GET
+- **Path:** /api/users/available-riders
+- **Description:** Get list of available riders.
+- **Auth Required:** Yes
+- **Response:** Array of rider objects.
+- **Frontend Usage:** GET with auth token.
+
+### Rider Routes (/api/riders)
+
+#### 1. Rider Signup
+- **Method:** POST
+- **Path:** /api/riders/signup
+- **Description:** Register a new rider.
+- **Body:** Rider details (validated by middleware).
+- **Response:** Rider object.
+- **Frontend Usage:** Send JSON payload.
+
+#### 2. Verify Email OTP
+- **Method:** POST
+- **Path:** /api/riders/verify-email
+- **Description:** Verify rider email with OTP.
+- **Body:**
+  - email: string
+  - otp: string
+- **Response:** Success message.
+- **Frontend Usage:** Send JSON.
+
+#### 3. Resend OTP
+- **Method:** POST
+- **Path:** /api/riders/resend-otp
+- **Description:** Resend OTP for rider email verification.
+- **Body:**
+  - email: string
+- **Response:** Success message.
+- **Frontend Usage:** Send JSON.
+
+#### 4. Update Location
+- **Method:** PUT
+- **Path:** /api/riders/location
+- **Description:** Update rider's location.
+- **Auth Required:** Yes
+- **Body:**
+  - lat: number
+  - lng: number
+- **Response:** Success message.
+- **Frontend Usage:** Send JSON with auth token.
+
+## Socket.IO Integration
+- **Connection:** Requires JWT token in handshake.auth.token.
+- **Events:**
+  - Riders can emit 'updateLocation' with {lat, lng}.
+  - Users receive 'riderLocationUpdate' with riderId and location.
+
+## Notes
+- All requests should include 'Content-Type: application/json' unless specified otherwise (e.g., multipart for file uploads).
+- Handle errors by checking response status codes (e.g., 400 for bad request, 401 for unauthorized).
+- For frontend consumption, use fetch() or axios to make requests, storing the JWT token securely (e.g., in localStorage or secure cookies).
