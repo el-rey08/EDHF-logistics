@@ -24,6 +24,8 @@ export interface IRider extends Document {
   status: "pending" | "approved" | "suspended";
   isAvailable: boolean;
 
+  approvedBy?: mongoose.Types.ObjectId | null; // Reference to the approving company
+
   // OTP related
   emailOTP?: string | null;
   otpExpiresAt?: Date | null;
@@ -82,6 +84,7 @@ const RiderSchema = new Schema<IRider>(
       default: "pending",
     },
     isAvailable: { type: Boolean, default: false },
+    approvedBy: { type: Schema.Types.ObjectId, ref: "Company", default: null },
 
     // ---------------- OTP FIELDS ----------------
     emailOTP: { type: String, select: false, default: null },

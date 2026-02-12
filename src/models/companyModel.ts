@@ -1,12 +1,12 @@
 import mongoose, { Document, mongo, Schema } from "mongoose";
 export interface company extends Document {
-    companyName: String,
-    companyEmail: String,
-    companyAddress: String,
-    companyPhone: String,
-    companyPassword: String,
+    companyName: string,
+    companyEmail: string,
+    companyAddress: string,
+    companyPhone: string,
+    companyPassword: string,
     role: "admin",
-    companyProfile?: String,
+    companyProfile?: string,
     emailOTP?: string | null,
     otpExpiresAt?: Date | null,
     otpAttempts: number,
