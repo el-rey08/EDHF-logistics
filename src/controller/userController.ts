@@ -1,14 +1,14 @@
 import { Request, Response } from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import { userModel } from "../models/userModel.js";
-import { blacklistModel } from "../models/blacklistModel.js";
-import { riderModel } from "../models/ridersModel.js";
-import { generateOTP } from "../utils/otp.js";
-import { hashValue } from "../utils/hash.js";
-import { sendEmail } from "../emails/emailService.js";
-import { verifyEmailOTPTemplate } from "../emails/templates/verifyEmail.js";
-import cloudinary from "../utils/cloudinary.js";
+import { userModel } from "../models/userModel";
+import { blacklistModel } from "../models/blacklistModel";
+import { riderModel } from "../models/ridersModel";
+import { generateOTP } from "../utils/otp";
+import { hashValue } from "../utils/hash";
+import { sendEmail } from "../emails/emailService";
+import { verifyEmailOTPTemplate } from "../emails/templates/verifyEmail";
+import cloudinary from "../utils/cloudinary";
 import fs from "fs";
 
 

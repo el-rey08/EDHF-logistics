@@ -11,9 +11,9 @@ import {
     forgotPassword,
     logout,
     getAvailableRiders
-} from "../controller/userController.js";
-import { authenticate } from "../middleware/auth.js";
-import { upload } from "../utils/multer.js";
+} from "../controller/userController";
+import { authenticate } from "../middleware/auth";
+import { upload } from "../utils/multer";
 
 export const userRoutes: Router = express.Router();
 

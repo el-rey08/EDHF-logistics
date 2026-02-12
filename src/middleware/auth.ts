@@ -21,27 +21,3 @@ export const authenticate = (req: any, res: Response, next: NextFunction) => {
   }
 };
 
-export const authenticateAdmin = (req: any, res: Response, next: NextFunction) => {
-  try {
-    const authHeader = req.headers.authorization;
-
-    if (!authHeader) {
-      res.status(401).json({ message: "Authorization required" });
-      return;
-    }
-
-    const token = authHeader.split(" ")[1];
-    const decoded: any = jwt.verify(token, process.env.JWT_SECRET as string);
-
-    if (decoded.role !== "admin") {
-      res.status(403).json({ message: "Access denied. Admin role required." });
-      return;
-    }
-
-    req.user = decoded;
-    next();
-
-  } catch (err) {
-    res.status(401).json({ message: "Invalid or expired token" });
-  }
-};

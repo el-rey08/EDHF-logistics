@@ -1,9 +1,9 @@
 import express, { Express } from "express";
 import "dotenv/config";
 import cors from "cors";
-import { connectDb } from "./config/db.js";
-import { userRoutes } from "./router/userRouter.js";
-import { riderRoutes } from "./router/riderRouter.js";
+import { connectDb } from "./config/db";
+import { userRoutes } from "./router/userRouter";
+import { riderRoutes } from "./router/riderRouter";
 import { createServer } from "http";
 import { Server } from "socket.io";
 import jwt from "jsonwebtoken";

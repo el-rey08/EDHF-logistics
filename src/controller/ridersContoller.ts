@@ -1,14 +1,14 @@
 import { Request, Response } from "express";
 import bcrypt from "bcrypt";
-import { riderModel } from "../models/ridersModel.js";
-import { generateOTP } from "../utils/otp.js";
-import { hashValue } from "../utils/hash.js";
-import { sendEmail } from "../emails/emailService.js";
-import { verifyEmailOTPTemplate } from "../emails/templates/verifyEmail.js";
-import cloudinary from "../utils/cloudinary.js";
+import { riderModel } from "../models/ridersModel";
+import { generateOTP } from "../utils/otp";
+import { hashValue } from "../utils/hash";
+import { sendEmail } from "../emails/emailService";
+import { verifyEmailOTPTemplate } from "../emails/templates/verifyEmail";
+import cloudinary from "../utils/cloudinary";
 import fs from "fs"
 import jwt from "jsonwebtoken";
-import { blacklistModel } from "../models/blacklistModel.js";
+import { blacklistModel } from "../models/blacklistModel";
 
 const OTP_EXPIRY_MINUTES = 10;
 const OTP_RESEND_COOLDOWN = 1; // minutes
