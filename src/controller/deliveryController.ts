@@ -93,7 +93,7 @@ export const createDelivery = async (req: Request, res: Response) => {
 
         // 2. Pricing and Delivery Type Logic
         let price = LGA_PRICE_LIST[sender.pickupLocation] || 2500;
-        let deliveryType = "express";
+        let deliveryType = "standard";
 
         // Parse pickupDate (assuming DD/MM/YYYY or similar string format, but for robust parsing, we might need a library or explicit split)
         // Trying to handle "DD/MM/YYYY" or "YYYY-MM-DD"
@@ -109,7 +109,7 @@ export const createDelivery = async (req: Request, res: Response) => {
 
         const day = dateObj.getDay(); // 0 = Sunday, 6 = Saturday
         if (day === 0 || day === 6) {
-            deliveryType = "standard";
+            deliveryType = "express";
             price = price * 1.5; // 50% surcharge
         }
 
@@ -128,15 +128,15 @@ export const createDelivery = async (req: Request, res: Response) => {
 
         await newDelivery.save();
 
-        // 5. Notify Admin if Standard Delivery
-        if (deliveryType === "standard") {
+        // 5. Notify Admin if Express Delivery (Weekend)
+        if (deliveryType === "express") {
             // Import sendEmail dynamically or ensure it's imported at top
             const { sendEmail } = require("../emails/emailService");
 
             await sendEmail({
                 to: process.env.ADMIN_EMAIL || "admin@example.com", // Fallback
-                subject: "New Standard Delivery Request (Weekend)",
-                html: `<p>A new Standard delivery request has been made for the weekend.</p>
+                subject: "New Express Delivery Request (Weekend)",
+                html: `<p>A new Express delivery request has been made for the weekend.</p>
                         <p><strong>Tracking ID:</strong> ${trackingId}</p>
                         <p><strong>Pickup Date:</strong> ${sender.pickupDate}</p>
                         <p>Please assign a rider manually.</p>`
