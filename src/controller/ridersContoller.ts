@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import bcrypt from "bcrypt";
-import { riderModel } from "../models/ridersModel";
+import { riderModel, generateRiderId } from "../models/ridersModel";
 import { generateOTP } from "../utils/otp";
 import { hashValue } from "../utils/hash";
 import { sendEmail } from "../emails/emailService";
@@ -65,6 +65,10 @@ export const riderSignup = async (req: Request, res: Response) => {
     // 4️⃣ Generate OTP
     const otp = generateOTP();
     const hashedOTP = await hashValue(otp);
+
+    // Generate Rider ID
+    const riderId = await generateRiderId();
+
     let profileImage: string | undefined;
 
     const file = req.file
@@ -85,6 +89,7 @@ export const riderSignup = async (req: Request, res: Response) => {
 
     // 5️⃣ Create rider
     const rider = new riderModel({
+      riderId,
       fullName,
       phoneNumber,
       email: email?.toLowerCase(),
@@ -123,7 +128,7 @@ export const riderSignup = async (req: Request, res: Response) => {
 
     return res.status(201).json({
       message: "Signup successful. Please verify your email.",
-      riderId: rider._id, // safer to return only id
+      riderId: rider.riderId, // safer to return only id
     });
   } catch (error: any) {
     console.error("Rider signup error:", error);
@@ -161,7 +166,12 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     res.status(200).json({
       message: "Login successful",
       token,
-      data: rider.fullName
+      rider: {
+        riderId: rider.riderId,
+        id: rider._id,
+        fullName: rider.fullName,
+        email: rider.email
+      }
     });
 
   } catch (err: any) {
@@ -398,6 +408,24 @@ export const updateLocation = async (req: any, res: Response) => {
     });
   } catch (error: any) {
     console.error("Update location error:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const getActiveRiders = async (req: Request, res: Response) => {
+  try {
+    const activeRiders = await riderModel.find({
+      status: "approved",
+      isAvailable: true,
+    });
+
+    res.status(200).json({
+      message: "Active riders fetched successfully",
+      count: activeRiders.length,
+      data: activeRiders,
+    });
+  } catch (error: any) {
+    console.error("Get active riders error:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };

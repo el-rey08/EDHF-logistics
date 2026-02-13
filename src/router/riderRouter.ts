@@ -1,5 +1,5 @@
 import express, { Router } from "express";
-import { riderSignup, verifyEmailOTP, resendOTP, updateLocation } from "../controller/ridersContoller";
+import { riderSignup, verifyEmailOTP, resendOTP, updateLocation, getActiveRiders } from "../controller/ridersContoller";
 import { validateRider } from "../middleware/ridersVlidation";
 import { authenticate } from "../middleware/auth";
 export const riderRoutes: Router = express.Router();
@@ -131,3 +131,15 @@ riderRoutes.post("/resend-otp", resendOTP);
  *         description: Location updated successfully
  */
 riderRoutes.put("/location", authenticate, updateLocation);
+
+/**
+ * @swagger
+ * /api/riders/active:
+ *   get:
+ *     summary: Get all active and available riders
+ *     tags: [Riders]
+ *     responses:
+ *       200:
+ *         description: List of active riders
+ */
+riderRoutes.get("/active", getActiveRiders);

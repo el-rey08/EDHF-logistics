@@ -4,6 +4,8 @@ import cors from "cors";
 import { connectDb } from "./config/db";
 import { userRoutes } from "./router/userRouter";
 import { riderRoutes } from "./router/riderRouter";
+import { deliveryRoutes } from "./router/deliveryRouter";
+import { notificationRoutes } from "./router/notificationRouter";
 import { createServer } from "http";
 import { Server } from "socket.io";
 import jwt from "jsonwebtoken";
@@ -21,6 +23,8 @@ connectDb();
 
 app.use("/api/users", userRoutes);
 app.use("/api/riders", riderRoutes);
+app.use("/api/deliveries", deliveryRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 const server = createServer(app);
 const io = new Server(server, {

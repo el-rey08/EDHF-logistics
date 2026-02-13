@@ -1,13 +1,35 @@
+// ------------------ CONSTANTS ------------------
+const RIDER_ID_PREFIX = "RID";
+
+export const generateRiderId = async (): Promise<string> => {
+  // Find the last rider sorted by creation date to get the highest number
+  const lastRider = await mongoose
+    .model<IRider>("Rider")
+    .findOne({ riderId: { $exists: true } })
+    .sort({ createdAt: -1 });
+
+  if (!lastRider || !lastRider.riderId) {
+    // First rider
+    return `${RIDER_ID_PREFIX}-001`;
+  }
+
+  // Extract the numeric part and increment
+  const lastNumber = parseInt(lastRider.riderId.split("-")[1], 10);
+  const newNumber = lastNumber + 1;
+  const paddedNumber = newNumber.toString().padStart(3, "0");
+
+  return `${RIDER_ID_PREFIX}-${paddedNumber}`;
+};
+
 import mongoose, { Document, Schema } from "mongoose";
 
 export interface IRider extends Document {
+  riderId: string; // Public-facing ID like "RID-001", "RID-002", etc.
   fullName: string;
   phoneNumber: string;
   email?: string;
   password: string;
-
   role: "rider";
-
   profileImage?: string;
 
   governmentIdType: "NIN" | "DRIVERS_LICENSE" | "PASSPORT";
@@ -50,6 +72,7 @@ export interface IRider extends Document {
 // -------------------- SCHEMA --------------------
 const RiderSchema = new Schema<IRider>(
   {
+    riderId: { type: String, unique: true }, // Public-facing ID like "RID-001"
     fullName: { type: String, required: true, trim: true },
     phoneNumber: { type: String, required: true, unique: true },
     email: { type: String, lowercase: true, unique: true, sparse: true },

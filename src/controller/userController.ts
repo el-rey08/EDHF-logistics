@@ -69,7 +69,7 @@ export const createUser = async (
     // ☁️ Cloudinary Upload (optional image)
     let profileImage: string | undefined;
 
-    const file = req.file 
+    const file = req.file
     if (file) {
       const uploadedImage = await cloudinary.uploader.upload(file.path, {
         folder: "uploads",
@@ -162,7 +162,13 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     res.status(200).json({
       message: "Login successful",
       token,
-      data: user.fullName
+      user: {
+        id: user._id,
+        fullName: user.fullName,
+        email: user.email,
+        address: user.address,
+        phoneNumber: user.phoneNumber
+      }
     });
 
   } catch (err: any) {
@@ -189,14 +195,14 @@ export const getOneUser = async (req: Request, res: Response): Promise<void> => 
   }
 };
 
-export const getAllUser = async (req:Request, res:Response) :Promise<void> => {
+export const getAllUser = async (req: Request, res: Response): Promise<void> => {
   try {
     const getUsers = await userModel.find()
-    if(!getUsers){
-      res.status(404).json({message:"Users not found"});
+    if (!getUsers) {
+      res.status(404).json({ message: "Users not found" });
       return;
     }
-    res.status(200).json({message:"Users fetched successfully",data:getUsers});
+    res.status(200).json({ message: "Users fetched successfully", data: getUsers });
   } catch (err: any) {
     res.status(500).json({ message: "Server error", err: err.message });
   }
@@ -264,8 +270,8 @@ export const verifyEmailOTP = async (req: any, res: any) => {
   const { email, otp } = req.body;
 
   if (!email || !otp) {
-      return res.status(400).json({ message: "Email and OTP are required" });
-    }
+    return res.status(400).json({ message: "Email and OTP are required" });
+  }
 
   const user = await userModel.findOne({ email });
   if (!user) {
@@ -286,7 +292,7 @@ export const verifyEmailOTP = async (req: any, res: any) => {
     return res.status(400).json({ message: "OTP has expired" });
   }
 
-  
+
 
   if (!user.emailOTP) {
     return res.status(400).json({ message: "OTP not found" });
@@ -307,25 +313,25 @@ export const verifyEmailOTP = async (req: any, res: any) => {
   await user.save();
 
   const token = jwt.sign(
-      {
-        userId: user._id,
-        email: user.email,
-        role: user.role,
-      },
-      process.env.JWT_SECRET as string,
-      { expiresIn: "7d" }
-    );
+    {
+      userId: user._id,
+      email: user.email,
+      role: user.role,
+    },
+    process.env.JWT_SECRET as string,
+    { expiresIn: "7d" }
+  );
 
-    return res.status(200).json({
-      message: "Account verified successfully",
-      token,
-      user: {
-        id: user._id,
-        email: user.email,
-        role: user.role,
-      },
-    });
-  };
+  return res.status(200).json({
+    message: "Account verified successfully",
+    token,
+    user: {
+      id: user._id,
+      email: user.email,
+      role: user.role,
+    },
+  });
+};
 
 export const resendOTP = async (req: any, res: any) => {
   const { email } = req.body;
@@ -346,7 +352,7 @@ export const resendOTP = async (req: any, res: any) => {
   if (
     existingUser.otpLastSentAt &&
     Date.now() - existingUser.otpLastSentAt.getTime() <
-      OTP_RESEND_COOLDOWN * 60000
+    OTP_RESEND_COOLDOWN * 60000
   ) {
     return res.status(429).json({
       message: "Please wait before requesting another OTP",

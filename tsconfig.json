@@ -1,27 +1,3 @@
-// {
-//   "compilerOptions": {
-//     "rootDir": "./src",
-//     "outDir": "./dist",
-
-//     "module": "ESNext",
-//     "target": "ESNext",
-//     "moduleResolution": "Bundler",
-
-//     "types": ["node"],
-//     "esModuleInterop": true,
-
-//     "sourceMap": true,
-//     "declaration": true,
-
-//     "strict": true,
-//     "skipLibCheck": true,
-
-//     "noUncheckedIndexedAccess": true,
-//     "exactOptionalPropertyTypes": true
-//   },
-//   "include": ["src"],
-//   "exclude": ["node_modules", "dist"]
-// }
 
 {
   // Visit https://aka.ms/tsconfig to read more about this file
